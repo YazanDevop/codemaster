@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeMaster — Enter The Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --cyan:#00f5ff;
+  --purple:#b44fff;
+  --green:#00ff88;
+  --orange:#ff6b2b;
+  --red:#ff2b5e;
+  --dark:#020510;
+  --dark2:#05091a;
+  --dark3:#080d1f;
+  --card:#0a0f28;
+  --card2:#0d1335;
+  --border:rgba(0,245,255,0.12);
+  --border2:rgba(0,245,255,0.25);
+  --text:#c8d8f0;
+  --muted:#4a5a7a;
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:var(--dark);
+  color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── CUSTOM CURSOR ── */
+#cursor{
+  width:12px;height:12px;
+  background:var(--cyan);
+  border-radius:50%;
+  position:fixed;top:0;left:0;
+  pointer-events:none;
+  z-index:99999;
+  transition:transform .1s;
+  box-shadow:0 0 15px var(--cyan),0 0 30px rgba(0,245,255,.4);
+  mix-blend-mode:screen;
+}
+#cursor-ring{
+  width:36px;height:36px;
+  border:1px solid rgba(0,245,255,.5);
+  border-radius:50%;
+  position:fixed;top:0;left:0;
+  pointer-events:none;
+  z-index:99998;
+  transition:transform .08s,width .2s,height .2s,border-color .2s;
+}
+body:has(a:hover) #cursor-ring,
+body:has(button:hover) #cursor-ring,
+body:has(.q-card:hover) #cursor-ring{
+  width:52px;height:52px;
+  border-color:var(--cyan);
+}
+
+/* ── CANVAS BACKGROUND ── */
+#bg-canvas{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  z-index:0;pointer-events:none;
+}
+
+/* ── SCANLINES OVERLAY ── */
+.scanlines{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,.04) 2px,
+    rgba(0,0,0,.04) 4px
+  );
+}
+
+/* ── NOISE OVERLAY ── */
+.noise{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  z-index:2;pointer-events:none;
+  opacity:.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ── ALL CONTENT ── */
+#app{position:relative;z-index:10}
+
+/* ── NAVBAR ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;
+  background:rgba(2,5,16,.8);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{
+  font-family:'Orbitron',monospace;
+  font-size:18px;font-weight:900;
+  color:var(--cyan);
+  letter-spacing:3px;
+  text-shadow:0 0 20px rgba(0,245,255,.6);
+  text-decoration:none;
+}
+.nav-logo span{color:var(--purple)}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{
+  font-family:'Share Tech Mono',monospace;
+  font-size:12px;letter-spacing:2px;
+  color:var(--muted);text-decoration:none;
+  text-transform:uppercase;
+  transition:color .2s,text-shadow .2s;
+}
+.nav-links a:hover{
+  color:var(--cyan);
+  text-shadow:0 0 12px rgba(0,245,255,.5);
+}
+.nav-badge{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;letter-spacing:1px;
+  padding:4px 12px;
+  border:1px solid var(--cyan);
+  color:var(--cyan);
+  border-radius:2px;
+  background:rgba(0,245,255,.05);
+  animation:pulse-border 2s ease-in-out infinite;
+}
+@keyframes pulse-border{
+  0%,100%{box-shadow:0 0 8px rgba(0,245,255,.2)}
+  50%{box-shadow:0 0 20px rgba(0,245,255,.5)}
+}
+
+/* ── HERO ── */
+#hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:80px 20px 40px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* portal ring */
+.portal{
+  position:absolute;
+  width:600px;height:600px;
+  border-radius:50%;
+  border:1px solid rgba(0,245,255,.06);
+  animation:rotate-slow 20s linear infinite;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+}
+.portal:nth-child(2){
+  width:800px;height:800px;
+  border-color:rgba(180,79,255,.04);
+  animation-duration:35s;animation-direction:reverse;
+}
+.portal:nth-child(3){
+  width:500px;height:500px;
+  border-color:rgba(0,255,136,.05);
+  animation-duration:15s;
+  border-style:dashed;
+}
+@keyframes rotate-slow{
+  to{transform:translate(-50%,-50%) rotate(360deg)}
+}
+
+.hero-tag{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;letter-spacing:4px;
+  color:var(--cyan);
+  text-transform:uppercase;
+  margin-bottom:20px;
+  opacity:0;
+  animation:fade-up .6s .3s forwards;
+}
+.hero-tag::before{content:'[ ';}
+.hero-tag::after{content:' ]';}
+
+.hero-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(48px,8vw,96px);
+  font-weight:900;
+  line-height:1;
+  margin-bottom:12px;
+  opacity:0;
+  animation:fade-up .8s .5s forwards;
+}
+.hero-title .line1{
+  display:block;
+  color:white;
+  -webkit-text-stroke:1px rgba(0,245,255,.3);
+  text-shadow:
+    0 0 40px rgba(0,245,255,.15),
+    0 0 80px rgba(0,245,255,.05);
+}
+.hero-title .line2{
+  display:block;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 30px rgba(0,245,255,.4));
+}
+
+.hero-sub{
+  font-size:16px;
+  color:var(--muted);
+  max-width:500px;
+  margin:0 auto 40px;
+  line-height:1.8;
+  opacity:0;
+  animation:fade-up .6s .7s forwards;
+}
+.hero-sub span{color:var(--cyan)}
+
+.hero-cta{
+  display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+  opacity:0;
+  animation:fade-up .6s .9s forwards;
+}
+.btn-primary{
+  font-family:'Orbitron',monospace;
+  font-size:12px;font-weight:700;letter-spacing:2px;
+  padding:14px 32px;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  color:#000;
+  border:none;border-radius:2px;
+  cursor:none;
+  text-decoration:none;
+  text-transform:uppercase;
+  position:relative;overflow:hidden;
+  transition:transform .2s,box-shadow .2s;
+  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+}
+.btn-primary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 30px rgba(0,245,255,.4);
+}
+.btn-primary::after{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,.2));
+  transform:translateX(-100%);
+  transition:transform .3s;
+}
+.btn-primary:hover::after{transform:translateX(100%)}
+
+.btn-secondary{
+  font-family:'Share Tech Mono',monospace;
+  font-size:12px;letter-spacing:2px;
+  padding:14px 32px;
+  background:transparent;
+  color:var(--cyan);
+  border:1px solid rgba(0,245,255,.4);
+  border-radius:2px;
+  cursor:none;
+  text-decoration:none;
+  text-transform:uppercase;
+  transition:background .2s,border-color .2s,box-shadow .2s;
+  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+}
+.btn-secondary:hover{
+  background:rgba(0,245,255,.06);
+  border-color:var(--cyan);
+  box-shadow:0 0 20px rgba(0,245,255,.2),inset 0 0 20px rgba(0,245,255,.03);
+}
+
+/* scroll indicator */
+.scroll-hint{
+  position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  opacity:0;animation:fade-up .6s 1.4s forwards;
+}
+.scroll-hint span{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;
+}
+.scroll-line{
+  width:1px;height:40px;
+  background:linear-gradient(to bottom,var(--cyan),transparent);
+  animation:scroll-pulse 1.5s ease-in-out infinite;
+}
+@keyframes scroll-pulse{
+  0%,100%{opacity:.3;transform:scaleY(.7)}
+  50%{opacity:1;transform:scaleY(1)}
+}
+
+@keyframes fade-up{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── STATS BAR ── */
+.stats-bar{
+  background:rgba(5,9,26,.9);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:28px 40px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:20px;
+}
+.stat-item{text-align:center}
+.stat-num{
+  font-family:'Orbitron',monospace;
+  font-size:36px;font-weight:900;
+  color:var(--cyan);
+  display:block;
+  text-shadow:0 0 20px rgba(0,245,255,.4);
+}
+.stat-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;letter-spacing:2px;
+  color:var(--muted);text-transform:uppercase;
+  margin-top:4px;
+}
+
+/* ── SECTION WRAPPER ── */
+.section{padding:80px 40px;max-width:1200px;margin:0 auto}
+.section-tag{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;letter-spacing:4px;
+  color:var(--cyan);text-transform:uppercase;
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:12px;
+}
+.section-tag::before{
+  content:'';width:30px;height:1px;background:var(--cyan);
+  box-shadow:0 0 6px var(--cyan);
+}
+.section-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(28px,4vw,48px);
+  font-weight:900;color:white;
+  margin-bottom:8px;
+  text-shadow:0 0 40px rgba(0,245,255,.1);
+}
+.section-title span{
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.section-sub{
+  font-size:15px;color:var(--muted);
+  max-width:500px;line-height:1.8;margin-bottom:48px;
+}
+
+/* ── LANGUAGE CARDS ── */
+.lang-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:20px;
+}
+.lang-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:32px;
+  position:relative;overflow:hidden;
+  cursor:none;
+  transition:transform .3s,border-color .3s,box-shadow .3s;
+  text-decoration:none;color:inherit;display:block;
+}
+.lang-card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--card-accent,var(--cyan));
+  box-shadow:0 0 20px var(--card-accent,var(--cyan));
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .4s cubic-bezier(.4,0,.2,1);
+}
+.lang-card:hover::before{transform:scaleX(1)}
+.lang-card:hover{
+  transform:translateY(-6px);
+  border-color:var(--card-accent,var(--cyan));
+  box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 40px rgba(0,245,255,.08);
+}
+.lang-card::after{
+  content:'';
+  position:absolute;
+  bottom:-60px;right:-60px;
+  width:160px;height:160px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(0,245,255,.04),transparent 70%);
+  transition:opacity .3s;
+}
+.lang-card:hover::after{opacity:2}
+
+.lang-sym{
+  font-family:'Orbitron',monospace;
+  font-size:48px;font-weight:900;
+  color:var(--card-accent,var(--cyan));
+  opacity:.15;
+  position:absolute;top:20px;right:24px;
+  transition:opacity .3s,transform .3s;
+  text-shadow:0 0 30px var(--card-accent,var(--cyan));
+}
+.lang-card:hover .lang-sym{opacity:.3;transform:scale(1.1) rotate(-5deg)}
+
+.lang-icon{
+  width:52px;height:52px;
+  border-radius:4px;
+  background:rgba(0,245,255,.08);
+  border:1px solid rgba(0,245,255,.15);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:20px;
+  font-family:'Orbitron',monospace;font-size:14px;font-weight:900;
+  color:var(--card-accent,var(--cyan));
+  transition:background .3s,box-shadow .3s;
+}
+.lang-card:hover .lang-icon{
+  background:rgba(0,245,255,.12);
+  box-shadow:0 0 20px rgba(0,245,255,.2);
+}
+.lang-name{
+  font-family:'Orbitron',monospace;
+  font-size:22px;font-weight:700;color:white;
+  margin-bottom:6px;
+}
+.lang-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px}
+.lang-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:24px}
+.tag{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:1px;
+  padding:3px 10px;
+  border:1px solid var(--border2);
+  color:var(--muted);border-radius:2px;
+  background:rgba(0,245,255,.03);
+}
+.lang-meta{
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  padding-top:16px;margin-top:4px;
+}
+.lang-count{color:var(--card-accent,var(--cyan));font-weight:700;font-size:13px}
+.lang-arrow{
+  color:var(--card-accent,var(--cyan));
+  font-size:18px;
+  transform:translateX(0);transition:transform .2s;
+}
+.lang-card:hover .lang-arrow{transform:translateX(6px)}
+
+/* ── CHAPTERS SECTION ── */
+#chapters{
+  background:linear-gradient(180deg,var(--dark) 0%,var(--dark2) 50%,var(--dark) 100%);
+  padding:80px 0;
+}
+.chapters-inner{max-width:1200px;margin:0 auto;padding:0 40px}
+
+/* chapter filter tabs */
+.chapter-tabs{
+  display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;
+}
+.tab-btn{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  padding:8px 18px;
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--muted);
+  border-radius:2px;cursor:none;
+  transition:all .2s;
+}
+.tab-btn:hover,.tab-btn.active{
+  border-color:var(--cyan);
+  color:var(--cyan);
+  background:rgba(0,245,255,.06);
+  box-shadow:0 0 12px rgba(0,245,255,.15);
+}
+
+.chapters-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:12px;
+}
+.chapter-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:20px;
+  cursor:none;
+  transition:all .25s;
+  position:relative;overflow:hidden;
+  display:flex;align-items:flex-start;gap:14px;
+}
+.chapter-card:hover{
+  border-color:var(--border2);
+  background:var(--card2);
+  transform:translateX(4px);
+  box-shadow:4px 0 0 var(--cyan),-4px 0 20px rgba(0,245,255,.05);
+}
+.ch-num-badge{
+  min-width:36px;height:36px;
+  border-radius:4px;
+  background:rgba(0,245,255,.06);
+  border:1px solid rgba(0,245,255,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--cyan);flex-shrink:0;
+  transition:background .2s,box-shadow .2s;
+}
+.chapter-card:hover .ch-num-badge{
+  background:rgba(0,245,255,.1);
+  box-shadow:0 0 12px rgba(0,245,255,.2);
+}
+.ch-info{flex:1}
+.ch-title{
+  font-size:14px;font-weight:600;color:white;
+  margin-bottom:4px;transition:color .2s;
+}
+.chapter-card:hover .ch-title{color:var(--cyan)}
+.ch-count-tag{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--muted);
+}
+.ch-bar{
+  width:100%;height:2px;
+  background:var(--border);
+  margin-top:10px;border-radius:1px;overflow:hidden;
+}
+.ch-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--cyan),var(--purple));
+  border-radius:1px;
+  box-shadow:0 0 8px rgba(0,245,255,.4);
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .6s cubic-bezier(.4,0,.2,1);
+}
+.chapter-card:hover .ch-bar-fill{transform:scaleX(1)}
+
+/* ── QUESTIONS SECTION ── */
+#questions{padding:80px 40px;max-width:1200px;margin:0 auto}
+
+.q-layout{display:grid;grid-template-columns:240px 1fr;gap:24px}
+.q-sidebar{position:sticky;top:80px;height:calc(100vh - 100px);overflow-y:auto}
+.q-sidebar::-webkit-scrollbar{width:3px}
+.q-sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.q-sidebar-inner{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:16px;
+}
+.sidebar-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;padding-bottom:10px;
+  border-bottom:1px solid var(--border);
+}
+.q-sec-btn{
+  width:100%;text-align:left;
+  background:none;border:none;
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  color:var(--muted);
+  padding:9px 10px;border-radius:3px;
+  cursor:none;display:flex;align-items:center;gap:8px;
+  transition:all .15s;position:relative;
+  border-left:2px solid transparent;
+}
+.q-sec-btn:hover{background:rgba(0,245,255,.04);color:var(--text)}
+.q-sec-btn.active{
+  background:rgba(0,245,255,.06);
+  color:var(--cyan);
+  border-left-color:var(--cyan);
+}
+.q-sec-btn .sec-cnt{
+  margin-left:auto;font-size:10px;
+  background:var(--border);
+  padding:1px 6px;border-radius:2px;
+  color:var(--muted);
+}
+.q-sec-btn.active .sec-cnt{background:rgba(0,245,255,.15);color:var(--cyan)}
+
+/* main q panel */
+.q-panel{display:flex;flex-direction:column;gap:8px}
+
+.q-section-header{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 18px;
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:4px;
+  margin-bottom:4px;
+  position:relative;overflow:hidden;
+}
+.q-section-header::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--cyan),var(--purple));
+}
+.q-section-header .sec-num{
+  font-family:'Orbitron',monospace;font-size:22px;font-weight:900;
+  color:var(--cyan);opacity:.2;
+}
+.q-section-header .sec-name{
+  font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:white;
+}
+.q-section-header .sec-total{
+  margin-left:auto;
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  color:var(--muted);
+}
+
+/* individual question card */
+.q-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:4px;
+  overflow:hidden;
+  transition:border-color .2s,box-shadow .2s;
+  cursor:none;
+}
+.q-card:hover{border-color:var(--border2)}
+.q-card.open{
+  border-color:rgba(0,245,255,.35);
+  box-shadow:0 0 30px rgba(0,245,255,.06),0 4px 20px rgba(0,0,0,.4);
+}
+
+.q-head{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:14px 16px;
+  user-select:none;
+}
+.q-badge{
+  min-width:30px;height:24px;
+  background:rgba(0,245,255,.07);
+  border:1px solid rgba(0,245,255,.15);
+  border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Share Tech Mono',monospace;font-size:10px;
+  color:var(--cyan);flex-shrink:0;margin-top:1px;
+}
+.q-card.open .q-badge{background:rgba(0,245,255,.15);border-color:rgba(0,245,255,.35)}
+
+.q-text{flex:1;font-size:13px;line-height:1.6;color:var(--text)}
+.q-io{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.io-pill{
+  font-family:'Share Tech Mono',monospace;font-size:10px;
+  padding:2px 8px;border-radius:2px;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.io-pill.in{
+  background:rgba(0,255,136,.06);
+  border:1px solid rgba(0,255,136,.2);
+  color:var(--green);
+}
+.io-pill.out{
+  background:rgba(0,200,255,.06);
+  border:1px solid rgba(0,200,255,.2);
+  color:#7ec8e3;
+}
+
+.q-toggle{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--card2);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;
+  transition:all .2s;color:var(--muted);
+  font-size:12px;
+}
+.q-card.open .q-toggle{
+  background:rgba(0,245,255,.1);
+  border-color:rgba(0,245,255,.35);
+  color:var(--cyan);
+  transform:rotate(180deg);
+}
+
+/* answer accordion */
+.q-answer{
+  max-height:0;overflow:hidden;
+  transition:max-height .45s cubic-bezier(.4,0,.2,1);
+}
+.q-card.open .q-answer{max-height:1200px}
+.answer-wrap{border-top:1px solid var(--border)}
+
+/* io display in answer */
+.ans-io{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border-bottom:1px solid var(--border);
+}
+.io-box{padding:14px 18px}
+.io-box:first-child{border-right:1px solid var(--border)}
+.io-label{
+  font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:6px;
+  display:flex;align-items:center;gap:6px;
+}
+.io-label.in-lbl{color:var(--green)}
+.io-label.out-lbl{color:#7ec8e3}
+.io-label::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.io-val{
+  font-family:'Share Tech Mono',monospace;font-size:12px;
+  color:white;white-space:pre-wrap;
+}
+
+/* code block */
+.code-wrap{padding:0 16px 16px}
+.code-header{
+  display:flex;align-items:center;justify-content:space-between;
+  background:#040810;
+  border:1px solid var(--border);
+  border-bottom:none;
+  padding:8px 14px;
+  border-radius:4px 4px 0 0;
+  margin-top:14px;
+}
+.code-dots{display:flex;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.r{background:#ff5f56}
+.dot.y{background:#ffbd2e}
+.dot.g{background:#27c93f}
+.code-file{
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  color:var(--muted);
+}
+.copy-btn{
+  font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;
+  padding:3px 10px;background:rgba(0,245,255,.05);
+  border:1px solid var(--border);color:var(--muted);
+  border-radius:2px;cursor:none;transition:all .2s;
+}
+.copy-btn:hover{background:rgba(0,245,255,.1);border-color:var(--cyan);color:var(--cyan)}
+.copy-btn.copied{background:rgba(0,255,136,.1);border-color:var(--green);color:var(--green)}
+
+pre.code{
+  background:#030609;
+  border:1px solid var(--border);
+  border-radius:0 0 4px 4px;
+  padding:16px 16px 16px 52px;
+  overflow-x:auto;
+  font-family:'Share Tech Mono',monospace;
+  font-size:12px;line-height:1.8;
+  position:relative;
+  margin:0;
+  counter-reset:line;
+}
+pre.code::-webkit-scrollbar{height:4px}
+pre.code::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.code-line{display:block;position:relative}
+.code-line::before{
+  counter-increment:line;content:counter(line);
+  position:absolute;left:-40px;
+  color:#1e2a3a;font-size:10px;
+  width:28px;text-align:right;
+  top:0;
+}
+.kw{color:#c792ea}
+.fn{color:#82aaff}
+.str{color:#f78c6c}
+.num{color:#f78c6c}
+.cmt{color:#546e7a;font-style:italic}
+.inc{color:#ffcb6b}
+.typ{color:#ffcb6b}
+.op{color:#89ddff}
+.ns{color:#89ddff}
+
+/* ── FEATURES SECTION ── */
+#features{
+  background:var(--dark2);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:80px 40px;
+}
+.features-inner{max-width:1200px;margin:0 auto}
+.features-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:20px;margin-top:48px;
+}
+.feat-card{
+  padding:28px;border-radius:4px;
+  background:var(--card);
+  border:1px solid var(--border);
+  position:relative;overflow:hidden;
+  transition:transform .25s,border-color .25s;
+}
+.feat-card:hover{transform:translateY(-4px);border-color:var(--border2)}
+.feat-icon{
+  width:44px;height:44px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-bottom:16px;
+  position:relative;
+}
+.feat-title{
+  font-family:'Orbitron',monospace;
+  font-size:14px;font-weight:700;color:white;
+  margin-bottom:8px;
+}
+.feat-desc{font-size:13px;color:var(--muted);line-height:1.7}
+.feat-glow{
+  position:absolute;top:-20px;right:-20px;
+  width:80px;height:80px;border-radius:50%;
+  opacity:.06;
+  background:radial-gradient(circle,var(--feat-color,var(--cyan)),transparent);
+}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--dark);
+  border-top:1px solid var(--border);
+  padding:40px;
+  text-align:center;
+}
+.footer-logo{
+  font-family:'Orbitron',monospace;
+  font-size:24px;font-weight:900;
+  color:var(--cyan);
+  text-shadow:0 0 20px rgba(0,245,255,.4);
+  margin-bottom:16px;
+  display:block;
+}
+.footer-logo span{color:var(--purple)}
+.footer-text{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;letter-spacing:2px;
+  color:var(--muted);
+}
+.footer-links{
+  display:flex;justify-content:center;gap:24px;
+  margin:20px 0;list-style:none;
+}
+.footer-links a{
+  font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;
+  color:var(--muted);text-decoration:none;
+  transition:color .2s;
+}
+.footer-links a:hover{color:var(--cyan)}
+
+/* ── GLITCH EFFECT ── */
+.glitch{position:relative}
+.glitch::before,.glitch::after{
+  content:attr(data-text);
+  position:absolute;top:0;left:0;width:100%;height:100%;
+}
+.glitch::before{
+  color:var(--cyan);
+  animation:glitch-1 4s infinite;
+  clip-path:polygon(0 30%,100% 30%,100% 50%,0 50%);
+}
+.glitch::after{
+  color:var(--purple);
+  animation:glitch-2 4s infinite;
+  clip-path:polygon(0 65%,100% 65%,100% 75%,0 75%);
+}
+@keyframes glitch-1{
+  0%,90%,100%{transform:translateX(0)}
+  92%{transform:translateX(-3px)}
+  94%{transform:translateX(3px)}
+  96%{transform:translateX(0)}
+}
+@keyframes glitch-2{
+  0%,85%,100%{transform:translateX(0)}
+  87%{transform:translateX(3px)}
+  89%{transform:translateX(-3px)}
+  91%{transform:translateX(0)}
+}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s,transform .7s}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}
+.reveal-delay-2{transition-delay:.2s}
+.reveal-delay-3{transition-delay:.3s}
+.reveal-delay-4{transition-delay:.4s}
+
+/* ── TERMINAL TYPING ── */
+.terminal{
+  font-family:'Share Tech Mono',monospace;
+  font-size:13px;color:var(--green);
+  background:#030609;
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:16px 20px;
+  margin-top:16px;
+  position:relative;
+}
+.terminal::before{
+  content:'// SYSTEM ONLINE';
+  position:absolute;top:-1px;left:14px;
+  font-size:9px;letter-spacing:2px;
+  background:#030609;padding:0 6px;
+  color:var(--muted);
+}
+.type-text::after{
+  content:'█';
+  animation:blink .8s step-end infinite;
+  color:var(--green);
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  nav{padding:0 20px}
+  .nav-links{display:none}
+  .stats-bar{grid-template-columns:repeat(2,1fr);padding:20px}
+  .section{padding:60px 20px}
+  #features{padding:60px 20px}
+  .q-layout{grid-template-columns:1fr}
+  .q-sidebar{position:static;height:auto;overflow:visible}
+  .q-sidebar-inner{display:flex;flex-wrap:wrap;gap:6px;padding:10px}
+  .q-sec-btn{width:auto;font-size:10px;padding:6px 10px}
+  footer{padding:30px 20px}
+  .chapters-inner,.q-layout-outer{padding:0 20px}
+  body{cursor:auto}
+  #cursor,#cursor-ring{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- Custom Cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Background Canvas -->
+<canvas id="bg-canvas"></canvas>
+<div class="scanlines"></div>
+<div class="noise"></div>
+
+<div id="app">
+
+<!-- ── NAV ── -->
+<nav>
+  <a class="nav-logo" href="#">CODE<span>MASTER</span></a>
+  <ul class="nav-links">
+    <li><a href="#languages">Languages</a></li>
+    <li><a href="#chapters">Chapters</a></li>
+    <li><a href="#questions">Practice</a></li>
+    <li><a href="#features">Features</a></li>
+  </ul>
+  <div class="nav-badge">DARK EDITION</div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="portal"></div>
+  <div class="portal"></div>
+  <div class="portal"></div>
+
+  <div class="hero-tag">Programming Practice Platform</div>
+  <h1 class="hero-title">
+    <span class="line1 glitch" data-text="ENTER THE">ENTER THE</span>
+    <span class="line2">CODE GRID</span>
+  </h1>
+  <p class="hero-sub">
+    Master <span>C++</span>, <span>Java</span> & <span>C</span> with
+    over 650+ curated problems. From basics to advanced algorithms —
+    your journey starts here.
+  </p>
+  <div class="hero-cta">
+    <a href="#questions" class="btn-primary">Start Practicing →</a>
+    <a href="#languages" class="btn-secondary">Explore Languages</a>
+  </div>
+
+  <div class="terminal" style="max-width:420px;margin-top:40px">
+    <span class="type-text" id="type-out"></span>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll to explore</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ── STATS ── -->
+<div class="stats-bar">
+  <div class="stat-item reveal">
+    <span class="stat-num" data-count="650">0</span>
+    <div class="stat-label">Total Questions</div>
+  </div>
+  <div class="stat-item reveal reveal-delay-1">
+    <span class="stat-num" data-count="9">0</span>
+    <div class="stat-label">Topics per Language</div>
+  </div>
+  <div class="stat-item reveal reveal-delay-2">
+    <span class="stat-num" data-count="3">0</span>
+    <div class="stat-label">Languages</div>
+  </div>
+  <div class="stat-item reveal reveal-delay-3">
+    <span class="stat-num" data-count="100">0</span>
+    <div class="stat-label">% Free</div>
+  </div>
+</div>
+
+<!-- ── LANGUAGES ── -->
+<section id="languages">
+  <div class="section">
+    <div class="section-tag reveal">Choose Your Language</div>
+    <h2 class="section-title reveal reveal-delay-1">Pick Your <span>Weapon</span></h2>
+    <p class="section-sub reveal reveal-delay-2">Three battle-tested languages. Each with a complete question bank, syntax-highlighted answers, and interactive examples.</p>
+
+    <div class="lang-grid">
+      <a href="#questions" class="lang-card reveal" style="--card-accent:var(--cyan)" data-lang="cpp">
+        <div class="lang-sym">C++</div>
+        <div class="lang-icon">C++</div>
+        <div class="lang-name">C++ Mastery</div>
+        <div class="lang-desc">The backbone of competitive programming. Master memory management, STL, and algorithmic thinking.</div>
+        <div class="lang-tags">
+          <span class="tag">Pointers</span>
+          <span class="tag">Arrays</span>
+          <span class="tag">Recursion</span>
+          <span class="tag">OOP</span>
+        </div>
+        <div class="lang-meta">
+          <span class="lang-count">210+ Questions</span>
+          <span>9 Chapters</span>
+          <span class="lang-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="#questions" class="lang-card reveal reveal-delay-1" style="--card-accent:var(--orange)" data-lang="java">
+        <div class="lang-sym" style="color:var(--orange)">Java</div>
+        <div class="lang-icon" style="background:rgba(255,107,43,.08);border-color:rgba(255,107,43,.2);color:var(--orange)">Java</div>
+        <div class="lang-name">Java Mastery</div>
+        <div class="lang-desc">Enterprise-grade language with powerful OOP. Includes Strings, Collections, and design patterns.</div>
+        <div class="lang-tags">
+          <span class="tag">OOP</span>
+          <span class="tag">Strings</span>
+          <span class="tag">Collections</span>
+          <span class="tag">Design Patterns</span>
+        </div>
+        <div class="lang-meta">
+          <span class="lang-count" style="color:var(--orange)">255+ Questions</span>
+          <span>11 Chapters</span>
+          <span class="lang-arrow" style="color:var(--orange)">→</span>
+        </div>
+      </a>
+
+      <a href="#questions" class="lang-card reveal reveal-delay-2" style="--card-accent:var(--green)" data-lang="c">
+        <div class="lang-sym" style="color:var(--green)">C</div>
+        <div class="lang-icon" style="background:rgba(0,255,136,.08);border-color:rgba(0,255,136,.2);color:var(--green)">C</div>
+        <div class="lang-name">C Mastery</div>
+        <div class="lang-desc">The foundation of all programming. Master low-level concepts, pointers, and memory directly.</div>
+        <div class="lang-tags">
+          <span class="tag">Pointers</span>
+          <span class="tag">Memory</span>
+          <span class="tag">Structs</span>
+          <span class="tag">Low-Level</span>
+        </div>
+        <div class="lang-meta">
+          <span class="lang-count" style="color:var(--green)">210+ Questions</span>
+          <span>9 Chapters</span>
+          <span class="lang-arrow" style="color:var(--green)">→</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── CHAPTERS ── -->
+<section id="chapters">
+  <div class="chapters-inner">
+    <div class="section-tag reveal">Content Structure</div>
+    <h2 class="section-title reveal reveal-delay-1">All <span>Chapters</span></h2>
+    <p class="section-sub reveal reveal-delay-2">Structured progression from fundamentals to advanced topics.</p>
+
+    <div class="chapter-tabs reveal reveal-delay-2">
+      <button class="tab-btn active" onclick="filterChapters('all')">All Topics</button>
+      <button class="tab-btn" onclick="filterChapters('basic')">Basics</button>
+      <button class="tab-btn" onclick="filterChapters('arrays')">Arrays</button>
+      <button class="tab-btn" onclick="filterChapters('advanced')">Advanced</button>
+    </div>
+
+    <div class="chapters-grid" id="chGrid">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ── QUESTIONS ── -->
+<section id="questions">
+  <div style="max-width:1200px;margin:0 auto;padding:80px 40px">
+    <div class="section-tag reveal">Practice Mode</div>
+    <h2 class="section-title reveal reveal-delay-1">Question <span>Bank</span></h2>
+    <p class="section-sub reveal reveal-delay-2">Click any question to reveal the answer with syntax-highlighted code.</p>
+
+    <!-- Language selector -->
+    <div style="display:flex;gap:10px;margin-bottom:32px;flex-wrap:wrap" class="reveal reveal-delay-2">
+      <button class="tab-btn active" id="lang-cpp" onclick="setLang('cpp')">C++</button>
+      <button class="tab-btn" id="lang-java" onclick="setLang('java')">Java</button>
+      <button class="tab-btn" id="lang-c" onclick="setLang('c')">C</button>
+    </div>
+
+    <div class="q-layout">
+      <div class="q-sidebar">
+        <div class="q-sidebar-inner">
+          <div class="sidebar-title">Chapters</div>
+          <div id="q-nav"></div>
+        </div>
+      </div>
+      <div class="q-panel" id="q-panel"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section id="features">
+  <div class="features-inner">
+    <div class="section-tag reveal">Why CodeMaster</div>
+    <h2 class="section-title reveal reveal-delay-1">Built for <span>Coders</span></h2>
+    <div class="features-grid">
+      <div class="feat-card reveal" style="--feat-color:var(--cyan)">
+        <div class="feat-glow"></div>
+        <div class="feat-icon" style="background:rgba(0,245,255,.08);font-size:22px">⚡</div>
+        <div class="feat-title">Instant Answers</div>
+        <div class="feat-desc">Click any question to instantly reveal syntax-highlighted solutions with input/output examples.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-1" style="--feat-color:var(--purple)">
+        <div class="feat-glow" style="background:radial-gradient(circle,var(--purple),transparent)"></div>
+        <div class="feat-icon" style="background:rgba(180,79,255,.08);font-size:22px">🎯</div>
+        <div class="feat-title">Curated Problems</div>
+        <div class="feat-desc">650+ hand-picked questions covering every essential topic from basics to advanced algorithms.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-2" style="--feat-color:var(--green)">
+        <div class="feat-glow" style="background:radial-gradient(circle,var(--green),transparent)"></div>
+        <div class="feat-icon" style="background:rgba(0,255,136,.08);font-size:22px">🌐</div>
+        <div class="feat-title">3 Languages</div>
+        <div class="feat-desc">Same problems adapted for C++, Java, and C. Master the logic once, apply it everywhere.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-3" style="--feat-color:var(--orange)">
+        <div class="feat-glow" style="background:radial-gradient(circle,var(--orange),transparent)"></div>
+        <div class="feat-icon" style="background:rgba(255,107,43,.08);font-size:22px">🚀</div>
+        <div class="feat-title">GitHub Ready</div>
+        <div class="feat-desc">Pure HTML/CSS/JS — zero dependencies, zero build step. Fork, clone, and deploy in seconds.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <span class="footer-logo">CODE<span>MASTER</span></span>
+  <ul class="footer-links">
+    <li><a href="#hero">Home</a></li>
+    <li><a href="#languages">Languages</a></li>
+    <li><a href="#questions">Practice</a></li>
+    <li><a href="https://github.com" target="_blank">GitHub</a></li>
+  </ul>
+  <p class="footer-text">© 2025 CodeMaster · Dark Edition · Built with ♦ for coders</p>
+</footer>
+
+</div><!-- #app -->
+
+<script>
+// ══════════════════════════════════════════
+//  CURSOR
+// ══════════════════════════════════════════
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.transform=`translate(${mx-6}px,${my-6}px)`;
+});
+function animRing(){
+  rx+=(mx-rx-18)*.12;
+  ry+=(my-ry-18)*.12;
+  ring.style.transform=`translate(${rx}px,${ry}px)`;
+  requestAnimationFrame(animRing);
+}
+animRing();
+
+// ══════════════════════════════════════════
+//  THREE.JS BACKGROUND — PARTICLE GALAXY
+// ══════════════════════════════════════════
+(function(){
+  const canvas=document.getElementById('bg-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,particles=[],lines=[];
+  const PARTICLE_COUNT=120;
+  const CONNECTION_DIST=130;
+
+  function resize(){
+    W=canvas.width=window.innerWidth;
+    H=canvas.height=window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  class Particle{
+    constructor(){this.reset(true)}
+    reset(init){
+      this.x=Math.random()*W;
+      this.y=init?Math.random()*H:-20;
+      this.vx=(Math.random()-.5)*.4;
+      this.vy=Math.random()*.3+.1;
+      this.r=Math.random()*1.5+.5;
+      this.alpha=Math.random()*.6+.2;
+      this.hue=Math.random()<.6?185:Math.random()<.5?270:150;
+      this.pulse=Math.random()*Math.PI*2;
+      this.pulseSpeed=Math.random()*.02+.01;
+    }
+    update(){
+      this.x+=this.vx;
+      this.y+=this.vy;
+      this.pulse+=this.pulseSpeed;
+      if(this.y>H+20)this.reset(false);
+      if(this.x<-20||this.x>W+20)this.vx*=-1;
+    }
+    draw(){
+      const a=this.alpha*(0.7+0.3*Math.sin(this.pulse));
+      ctx.beginPath();
+      ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+      ctx.fillStyle=`hsla(${this.hue},100%,70%,${a})`;
+      ctx.fill();
+      // glow
+      ctx.beginPath();
+      ctx.arc(this.x,this.y,this.r*3,0,Math.PI*2);
+      const g=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.r*3);
+      g.addColorStop(0,`hsla(${this.hue},100%,70%,${a*.3})`);
+      g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;
+      ctx.fill();
+    }
+  }
+
+  for(let i=0;i<PARTICLE_COUNT;i++) particles.push(new Particle());
+
+  // Grid lines
+  function drawGrid(){
+    const step=80;
+    ctx.strokeStyle='rgba(0,245,255,0.03)';
+    ctx.lineWidth=.5;
+    for(let x=0;x<W;x+=step){
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
+    }
+    for(let y=0;y<H;y+=step){
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    }
+  }
+
+  // Horizon glow
+  function drawHorizon(){
+    const g=ctx.createLinearGradient(0,0,W,0);
+    g.addColorStop(0,'transparent');
+    g.addColorStop(.3,'rgba(0,245,255,0.02)');
+    g.addColorStop(.7,'rgba(180,79,255,0.02)');
+    g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;
+    ctx.fillRect(0,H*.6,W,2);
+
+    // bottom glow
+    const bg=ctx.createLinearGradient(0,H*.7,0,H);
+    bg.addColorStop(0,'transparent');
+    bg.addColorStop(1,'rgba(0,245,255,0.04)');
+    ctx.fillStyle=bg;
+    ctx.fillRect(0,H*.7,W,H*.3);
+  }
+
+  function drawConnections(){
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x;
+        const dy=particles[i].y-particles[j].y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<CONNECTION_DIST){
+          const a=(1-dist/CONNECTION_DIST)*.15;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x,particles[i].y);
+          ctx.lineTo(particles[j].x,particles[j].y);
+          ctx.strokeStyle=`rgba(0,245,255,${a})`;
+          ctx.lineWidth=.5;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // Shooting stars
+  let stars=[];
+  class Star{
+    constructor(){
+      this.x=Math.random()*W;
+      this.y=Math.random()*H*.5;
+      this.len=Math.random()*80+40;
+      this.speed=Math.random()*4+3;
+      this.alpha=1;
+      this.angle=Math.PI/6;
+    }
+    update(){
+      this.x+=Math.cos(this.angle)*this.speed;
+      this.y+=Math.sin(this.angle)*this.speed;
+      this.alpha-=.015;
+    }
+    draw(){
+      ctx.save();
+      ctx.globalAlpha=this.alpha;
+      const g=ctx.createLinearGradient(
+        this.x,this.y,
+        this.x-Math.cos(this.angle)*this.len,
+        this.y-Math.sin(this.angle)*this.len
+      );
+      g.addColorStop(0,'rgba(0,245,255,0.8)');
+      g.addColorStop(1,'transparent');
+      ctx.strokeStyle=g;
+      ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(this.x,this.y);
+      ctx.lineTo(this.x-Math.cos(this.angle)*this.len,this.y-Math.sin(this.angle)*this.len);
+      ctx.stroke();
+      ctx.restore();
+    }
+    dead(){return this.alpha<=0||this.x>W+50||this.y>H+50}
+  }
+
+  setInterval(()=>{
+    if(Math.random()<.4&&stars.length<5) stars.push(new Star());
+  },1500);
+
+  function animate(){
+    ctx.clearRect(0,0,W,H);
+    drawGrid();
+    drawHorizon();
+    drawConnections();
+    particles.forEach(p=>{p.update();p.draw()});
+    stars=stars.filter(s=>!s.dead());
+    stars.forEach(s=>{s.update();s.draw()});
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+// ══════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════
+const CHAPTERS = [
+  {id:'basics',name:'Basics & Conditionals',count:17,group:'basic',
+   q:[
+    [1,'Write a program to print "Hello" on screen and your name on a separate line.'],
+    [2,'Write a program that takes the length and width of a rectangle and calculates the area.'],
+    [3,'Write a program that takes the radius of a circle and calculates the area.'],
+    [4,'Write a program to print the sum of two numbers.'],
+    [5,'Write a program to check if a given number is a multiple of 2 and 3.'],
+    [6,'Write a program to swap two variables.'],
+    [7,'Write a program that takes two integers and prints the larger one.'],
+    [8,'Write a program that takes a character and prints whether it is a vowel or a consonant.'],
+    [9,'Write a program that takes an integer and prints whether it is positive, negative, or zero.'],
+    [10,'Write a program to solve the linear equation 3x + 5 = 8 and print the value of x.'],
+    [11,'Write a program that takes a year and prints whether it is a leap year or not.'],
+    [12,'Write a program that takes an integer and prints whether it is even or odd.'],
+    [13,'Write a program that takes three integers and prints the smallest one.'],
+    [14,'Write a program to print the ASCII value of a given character.'],
+    [15,'Write a program to calculate the sum of two integers and return true if the sum equals a third integer.'],
+    [16,'Write a program that accepts three integers and returns true if two or more have the same rightmost digit.',{in:'5 / 10 / 15',out:'true'}],
+    [17,'Write a program to convert seconds to hours, minutes and seconds.',{in:'86399',out:'23:59:59'}],
+   ]},
+  {id:'loops',name:'Loops',count:20,group:'basic',
+   q:[
+    [1,'Write a program to print numbers from 1 to 10 using a loop.'],
+    [2,'Write a program that prints the sum of all numbers from 1 to 100.',{in:null,out:'5050'}],
+    [3,'Write a program that prints the multiplication table of a given number.'],
+    [4,'Write a program to print all even numbers between 1 and 50.'],
+    [5,'Write a program to print the factorial of a given number.',{in:'5',out:'120'}],
+    [6,'Write a program that checks if a number is prime.',{in:'17',out:'Prime'}],
+    [7,'Write a program that prints the first 10 Fibonacci numbers.',{in:null,out:'0 1 1 2 3 5 8 13 21 34'}],
+    [8,'Write a program to find the GCD of two numbers using a loop.',{in:'48 18',out:'6'}],
+    [9,'Write a program to compute the sum of the first 100 prime numbers.',{in:null,out:'24133'}],
+    [10,'Write a program to calculate the power of a number using a loop.'],
+    [11,'Write a program to get sum of the series 7+77+777...N.'],
+    [12,'Write a program that keeps reading integers until -1, then prints sum and average.'],
+    [13,'Write a program to calculate: (1×1) + (2×2) + ... + (n×n).',{in:'5',out:'55'}],
+    [14,'Write a program that reads n grades and prints letter grade (A:90-100, B:80-89.9, C:70-79.9, F:<70).'],
+    [15,'Write a program that calculates the sum of cubes of first n natural numbers.'],
+    [16,'Write a program that checks if n is a perfect number.'],
+    [17,'Write a program that finds the largest prime factor of n.'],
+    [18,'Write a program that finds the smallest prime greater than n.'],
+    [19,'Write a program that checks if n is a perfect square.'],
+    [20,'Write a program that prints all numbers from 1 to 100 divisible by both 3 and 5.',{in:null,out:'15 30 45 60 75 90'}],
+   ]},
+  {id:'digits',name:'Digit Operations',count:25,group:'basic',
+   q:[
+    [1,'Write a program that counts the number of digits in a given integer.',{in:'12345',out:'5'}],
+    [2,'Write a program to print the sum of digits.',{in:'567',out:'18'}],
+    [3,'Write a program to reverse the digits of a given integer.',{in:'1234',out:'4321'}],
+    [4,'Write a program to print occurrences of each digit.'],
+    [5,'Write a program that prints all prime digits of a given integer.'],
+    [6,'Write a program to check if a given integer is a palindrome.',{in:'121',out:'Palindrome'}],
+    [7,'Write a program to find the largest digit.',{in:'3829',out:'9'}],
+    [8,'Write a program to find the difference between sum of even digits and odd digits.'],
+    [9,'Write a program that accepts two integers (25-75) and returns true if there is a common digit.',{in:'35, 45',out:'true'}],
+    [10,'Add all digits repeatedly until result has one digit.',{in:'58',out:'4'}],
+    [11,'Write a program to convert binary number to decimal.',{in:'1010',out:'10'}],
+    [12,'Write a program to print peak digits.'],
+    [13,'Write a program that rotates the digits one position to the right.'],
+    [14,'Swap the largest digit with the smallest digit.'],
+    [15,'Write a program to sort the digits.'],
+    [16,'Write a program to swap every two digits.'],
+    [17,'Write a program to delete a digit by its position.'],
+    [18,'Return the length of the longest consecutive sequence of 1s.'],
+    [19,'Find the largest and second largest digit.'],
+    [20,'Find the largest digit in each group of three consecutive digits.'],
+    [21,'Find the largest common digit between two numbers.'],
+    [22,'Find the GCD of all digits in a number.'],
+    [23,'Sort digits so even digits are on the right and odd on the left.'],
+    [24,'Convert from binary to decimal.'],
+    [25,'Convert from decimal to binary.'],
+   ]},
+  {id:'functions',name:'Functions',count:15,group:'basic',
+   q:[
+    [1,'Write a function that returns whether an integer is even or odd.'],
+    [2,'Write a function that returns the square of a number.'],
+    [3,'Write a function that takes two numbers and returns the larger one.'],
+    [4,'Write a function that calculates the sum of numbers from 1 to n.'],
+    [5,'Write a function that checks if a character is a vowel.'],
+    [6,'Write a function that calculates the factorial.',{in:'6',out:'720'}],
+    [7,'Write a function that checks if a number is prime.',{in:'29',out:'Prime'}],
+    [8,'Write a function that calculates power (a^b) without pow().'],
+    [9,'Write a function that reverses a number.',{in:'123',out:'321'}],
+    [10,'Write a function that calculates the sum of digits.',{in:'567',out:'18'}],
+    [11,'Write a function that checks if a number is a palindrome.',{in:'1331',out:'true'}],
+    [12,'Write a function that finds the largest digit.'],
+    [13,'Write a function that finds the smallest digit.'],
+    [14,'Write a function that calculates the LCM of two numbers.'],
+    [15,'Write a function that calculates GCD using the Euclidean algorithm.'],
+   ]},
+  {id:'arrays1d',name:'1D Arrays',count:51,group:'arrays',
+   q:[
+    [1,'Print all elements of an array.'],
+    [2,'Print all elements in reverse order.'],
+    [3,'Print only the odd numbers from an array.'],
+    [4,'Print elements at even indices only.'],
+    [5,'Print all prime numbers from an array.'],
+    [6,'Calculate the average of odd and even numbers separately.'],
+    [7,'Replace negatives with 0, and numbers >100 with 100.'],
+    [8,'Double all values in an array.'],
+    [9,'Find the largest and smallest elements.',{in:'3 7 1 9 4',out:'Max=9, Min=1'}],
+    [10,'Find the index of the largest element (first occurrence).'],
+    [11,'Find the index of the largest element (last occurrence).'],
+    [12,'Find the index of the largest element (second occurrence).'],
+    [13,'Find the largest and second largest using two for loops.'],
+    [14,'Find the three largest using a single for loop.'],
+    [15,'Find the frequency of the largest number.'],
+    [16,'Print peaks (element greater than both neighbors).'],
+    [17,'Store all peak numbers in a separate array.'],
+    [18,'Print the largest and smallest prime numbers.'],
+    [19,'Count the number of odd numbers.'],
+    [20,'Count even numbers that are also multiples of 3.'],
+    [21,'Count the number of prime numbers.'],
+    [22,'Count the number of peak elements.'],
+    [23,'Count the frequency of the maximum number.'],
+    [24,'Count consecutive sequences of odd numbers.'],
+    [25,'Count consecutive sequences of odd or even numbers.'],
+    [26,'Count consecutive sequences of 1s in a binary sequence.'],
+    [27,'Count consecutive repeated numbers.'],
+    [28,'Swap the first and last elements.'],
+    [29,'Swap every two adjacent elements.'],
+    [30,'Reverse the order of elements.'],
+    [31,'Reverse every k elements.'],
+    [32,'Reverse only the prime numbers.'],
+    [33,'Sort in ascending order using Bubble Sort.',{in:'5 2 8 1 9',out:'1 2 5 8 9'}],
+    [34,'Sort in descending order using Bubble Sort.'],
+    [35,'Sort so all odd numbers come first, then even numbers.'],
+    [36,'Sort to alternate between odd and even numbers.'],
+    [37,'Sort only the prime numbers in an array.'],
+    [38,'Sort: prime numbers first, non-prime numbers last.'],
+    [39,'Sort in zigzag: largest, smallest, 2nd largest, 2nd smallest...'],
+    [40,'Rotate the elements to the right.'],
+    [41,'Rotate the elements to the left.'],
+    [42,'Rotate to the right by k positions.'],
+    [43,'Remove element by index and shift remaining.'],
+    [44,'Insert element at specific index.'],
+    [45,'Check if an array is a palindrome.'],
+    [46,'Check if array can become palindrome after rotations.'],
+    [47,'Check if array can become palindrome by swapping.'],
+    [48,'Find the longest palindrome sub array.'],
+    [49,'Find the sum of the longest sub array of consecutive odd numbers.'],
+    [50,'Find minimum swaps to make 10101011 a palindrome.'],
+    [51,'Find the longest increasing sequence.'],
+   ]},
+  {id:'arrays2d',name:'2D Arrays',count:50,group:'arrays',
+   q:[
+    [1,'Print all elements of a 2D array.'],
+    [2,'Print in reverse row-wise order.'],
+    [3,'Print in reverse column-wise order.'],
+    [4,'Calculate the sum of all elements.'],
+    [5,'Find the largest element.'],
+    [6,'Find the smallest element.'],
+    [7,'Count even numbers.'],
+    [8,'Count odd numbers.'],
+    [9,'Calculate the sum of each row.'],
+    [10,'Calculate the sum of each column.'],
+    [11,'Find the row with the maximum sum.'],
+    [12,'Find the column with the maximum sum.'],
+    [13,'Find the row with the minimum sum.'],
+    [14,'Find the column with the minimum sum.'],
+    [15,'Find the sum of the main diagonal.'],
+    [16,'Find the sum of the secondary diagonal.'],
+    [17,'Check if a 2D array is symmetric.'],
+    [18,'Transpose a 2D array.',{in:'1 2 3 / 4 5 6',out:'1 4 / 2 5 / 3 6'}],
+    [19,'Rotate 90 degrees clockwise.'],
+    [20,'Rotate 90 degrees counterclockwise.'],
+    [21,'Print in spiral order.'],
+    [22,'Find all peak elements.'],
+    [23,'Find the maximum sum submatrix of size k × k.'],
+    [24,'Find min and max element in each row.'],
+    [25,'Find min and max element in each column.'],
+    [26,'Check for repeating pattern in rows.'],
+    [27,'Check for repeating pattern in columns.'],
+    [28,'Count total prime numbers.'],
+    [29,'Replace all negatives with 0.'],
+    [30,'Find the row with the most odd elements.'],
+    [31,'Find the row with the most even elements.'],
+    [32,'Find the column with the most odd elements.'],
+    [33,'Find the column with the most even elements.'],
+    [34,'Flatten a 2D array into 1D.'],
+    [35,'Convert a 1D array into 2D of given dimensions.'],
+    [36,'Swap two rows.'],
+    [37,'Swap two columns.'],
+    [38,'Reverse each row.'],
+    [39,'Reverse each column.'],
+    [40,'Check if all rows are sorted in increasing order.'],
+    [41,'Check if all columns are sorted in increasing order.'],
+    [42,'Check if it is an identity matrix.'],
+    [43,'Find elements greater than a given number.'],
+    [44,'Find first occurrence of the maximum element.'],
+    [45,'Find last occurrence of the maximum element.'],
+    [46,'Count elements divisible by 3.'],
+    [47,'Count elements divisible by 5.'],
+    [48,'Sum all elements above the main diagonal.'],
+    [49,'Sum all elements below the main diagonal.'],
+    [50,'Shift all elements one position to the right, row-wise.'],
+   ]},
+  {id:'pointers',name:'Pointers',count:20,group:'advanced',
+   q:[
+    [1,'Declare a pointer and print the variable value using it.'],
+    [2,'Swap two numbers using pointers.',{in:null,out:'x=10, y=5'}],
+    [3,'Print all elements of an array using a pointer.'],
+    [4,'Find the sum of elements using pointers.'],
+    [5,'Find largest and smallest element using pointers.'],
+    [6,'Reverse a 1D array using pointers.'],
+    [7,'Count even and odd numbers using pointers.'],
+    [8,'Copy one array to another using pointers.'],
+    [9,'Write a function that takes two integer pointers and returns their sum.'],
+    [10,'Print elements of a 2D array using pointers.'],
+    [11,'Calculate sum of each row and column using pointers.'],
+    [12,'Find row and column with maximum sum using pointers.'],
+    [13,'Access a 2D array using pointer arithmetic without indices.'],
+    [14,'Transpose a 2D array using pointers.'],
+    [15,'Dynamically allocate a 2D array and fill with user input.'],
+    [16,'Reverse a 1D array in-place using pointers only.'],
+    [17,'Merge two sorted arrays using pointers.'],
+    [18,'Find duplicate elements using pointers.'],
+    [19,'Dynamically allocate a jagged array and compute row sums.'],
+    [20,'Implement matrix multiplication using pointers.'],
+   ]},
+  {id:'recursion',name:'Recursion',count:20,group:'advanced',
+   q:[
+    [1,'Recursive function to calculate factorial.',{in:'5',out:'120'}],
+    [2,'Recursive function to print 1 to N.'],
+    [3,'Recursive function to print N to 1.'],
+    [4,'Recursive function to calculate sum of first N natural numbers.',{in:'10',out:'55'}],
+    [5,'Recursive function to check if a number is a power of 2.',{in:'8',out:'true'}],
+    [6,'Recursive function to find GCD.',{in:'48 18',out:'6'}],
+    [7,'Recursive function to calculate nth Fibonacci number.',{in:'10',out:'55'}],
+    [8,'Recursive function to reverse a string.',{in:'hello',out:'olleh'}],
+    [9,'Recursive function to check if a string is a palindrome.',{in:'racecar',out:'true'}],
+    [10,'Recursive function to calculate sum of array elements.'],
+    [11,'Recursive function to find maximum element in array.'],
+    [12,'Recursive function to count digits.',{in:'12345',out:'5'}],
+    [13,'Recursive function to print all subsets of a string.'],
+    [14,'Recursive Tower of Hanoi.',{in:'3 disks',out:'7 moves'}],
+    [15,'Recursive function to find all permutations of a string.'],
+    [16,'Recursive function to calculate sum of elements in 2D array.'],
+    [17,'Recursive function to flatten a nested array.'],
+    [18,'Recursive function to generate all binary strings of length N.'],
+    [19,'Recursive function to solve the N-Queens problem.'],
+    [20,'Recursive function to compute minimum path sum in a matrix.'],
+   ]},
+  {id:'advanced',name:'Advanced Problems',count:22,group:'advanced',
+   q:[
+    [1,'Find the maximum average of every sub array of size k.'],
+    [2,'Check if an array contains only unique elements.'],
+    [3,'Remove duplicate elements from an array.'],
+    [4,'Divide array into two: one for odd, one for even.'],
+    [5,'Create the union of two arrays without duplicates.'],
+    [6,'Create the intersection of two arrays without duplicates.'],
+    [7,'Insert a sub array at a user-specified index.'],
+    [8,'Resize an array to a new size.'],
+    [9,'Print only the unique numbers from an array.'],
+    [10,'Find the GCD of all elements.'],
+    [11,'Find the LCM of all elements.'],
+    [12,'Check whether an array contains a repeating pattern.'],
+    [13,'Check if an array is increasing or decreasing.'],
+    [14,'Print the frequency of each element.',{in:'1 2 1 3 2 1',out:'1→3, 2→2, 3→1'}],
+    [15,'Find the minimum number of coins to represent a number.',{in:'1000',out:'4 coins (500+400+100)'}],
+    [16,'Find the smallest difference between adjacent numbers.'],
+    [17,'Find the missing number in a sequence.',{in:'1 2 4 5 6',out:'3'}],
+    [18,'Print the elements in a spiral order.'],
+    [19,'Find the pair whose sum is closest to zero.'],
+    [20,'Find the longest sequence with equal sums in two arrays.'],
+    [21,'Check if three numbers exist whose sum equals zero.'],
+    [22,'Find the number closest to zero.',{in:'-5 3 -1 7',out:'-1'}],
+   ]},
+];
+
+// ══════════════════════════════════════════
+//  ANSWERS DATABASE
+// ══════════════════════════════════════════
+const ANSWERS = {
+  cpp: {
+    'basics-1':{code:`#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello" << endl;
+    cout << "Ahmad" << endl;
+    return 0;
+}`,input:'None',output:'Hello\\nAhmad'},
+    'basics-2':{code:`#include <iostream>
+using namespace std;
+
+int main() {
+    double length, width;
+    cout << "Enter length and width: ";
+    cin >> length >> width;
+    cout << "Area = " << length * width << endl;
+    return 0;
+}`,input:'5 3',output:'Area = 15'},
+    'basics-5':{code:`#include <iostream>
+using namespace std;
+
+int main() {
+    int n;
+    cin >> n;
+    if (n % 2 == 0 && n % 3 == 0)
+        cout << "Multiple of 2 and 3" << endl;
+    else
+        cout << "Not a multiple" << endl;
+    return 0;
+}`,input:'12',output:'Multiple of 2 and 3'},
+    'basics-11':{code:`#include <iostream>
+using namespace std;
+
+int main() {
+    int year;
+    cin >> year;
+    if ((year % 4 == 0 && year % 100 != 0)
+         || year % 400 == 0)
+        cout << "Leap year" << endl;
+    else
+        cout << "Not a leap year" << endl;
+    return 0;
+}`,input:'2024',output:'Leap year'},
+    'loops-5':{code:`#include <iostream>
+using namespace std;
+
+int main() {
+    int n;
+    cin >> n;
+    long long fact = 1;
+    for (int i = 1; i <= n; i++)
+        fact *= i;
+    cout << n << "! = " << fact << endl;
+    return 0;
+}`,input:'5',output:'5! = 120'},
+    'loops-6':{code:`#include <iostream>
+using namespace std;
+
+int main() {
+    int n;
+    cin >> n;
+    if (n < 2) { cout << "Not prime"; return 0; }
+    bool prime = true;
+    for (int i = 2; i * i <= n; i++)
+        if (n % i == 0) { prime = false; break; }
+    cout << (prime ? "Prime" : "Not prime") << endl;
+    return 0;
+}`,input:'17',output:'Prime'},
+    'loops-7':{code:`#include <iostream>
+using namespace std;
+
+int main() {
+    int a = 0, b = 1;
+    cout << a << " " << b;
+    for (int i = 2; i < 10; i++) {
+        int c = a + b;
+        cout << " " << c;
+        a = b; b = c;
+    }
+    cout << endl;
+    return 0;
+}`,input:'None',output:'0 1 1 2 3 5 8 13 21 34'},
+    'functions-6':{code:`#include <iostream>
+using namespace std;
+
+long long factorial(int n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+
+int main() {
+    int n;
+    cin >> n;
+    cout << n << "! = " << factorial(n) << endl;
+    return 0;
+}`,input:'6',output:'6! = 720'},
+    'functions-7':{code:`#include <iostream>
+using namespace std;
+
+bool isPrime(int n) {
+    if (n < 2) return false;
+    for (int i = 2; i * i <= n; i++)
+        if (n % i == 0) return false;
+    return true;
+}
+
+int main() {
+    int n;
+    cin >> n;
+    cout << (isPrime(n) ? "Prime" : "Not prime") << endl;
+    return 0;
+}`,input:'29',output:'Prime'},
+    'arrays1d-9':{code:`#include <iostream>
+using namespace std;
+
+int main() {
+    int n;
+    cin >> n;
+    int arr[n];
+    for (int i = 0; i < n; i++) cin >> arr[i];
+    
+    int maxVal = arr[0], minVal = arr[0];
+    for (int i = 1; i < n; i++) {
+        if (arr[i] > maxVal) maxVal = arr[i];
+        if (arr[i] < minVal) minVal = arr[i];
+    }
+    cout << "Max=" << maxVal << " Min=" << minVal << endl;
+    return 0;
+}`,input:'5\n3 7 1 9 4',output:'Max=9 Min=1'},
+    'arrays1d-33':{code:`#include <iostream>
+using namespace std;
+
+int main() {
+    int n;
+    cin >> n;
+    int arr[n];
+    for (int i = 0; i < n; i++) cin >> arr[i];
+    
+    for (int i = 0; i < n-1; i++)
+        for (int j = 0; j < n-i-1; j++)
+            if (arr[j] > arr[j+1]) {
+                int t = arr[j];
+                arr[j] = arr[j+1];
+                arr[j+1] = t;
+            }
+    
+    for (int i = 0; i < n; i++)
+        cout << arr[i] << " ";
+    return 0;
+}`,input:'5\n5 2 8 1 9',output:'1 2 5 8 9'},
+    'pointers-2':{code:`#include <iostream>
+using namespace std;
+
+void swap(int* a, int* b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int main() {
+    int x = 5, y = 10;
+    swap(&x, &y);
+    cout << "x=" << x << " y=" << y << endl;
+    return 0;
+}`,input:'x=5, y=10',output:'x=10 y=5'},
+    'recursion-1':{code:`#include <iostream>
+using namespace std;
+
+long long factorial(int n) {
+    if (n == 0 || n == 1) return 1;
+    return n * factorial(n - 1);
+}
+
+int main() {
+    int n;
+    cin >> n;
+    cout << n << "! = " << factorial(n) << endl;
+    return 0;
+}`,input:'5',output:'5! = 120'},
+    'recursion-7':{code:`#include <iostream>
+using namespace std;
+
+int fib(int n) {
+    if (n <= 1) return n;
+    return fib(n - 1) + fib(n - 2);
+}
+
+int main() {
+    int n;
+    cin >> n;
+    cout << "F(" << n << ") = " << fib(n) << endl;
+    return 0;
+}`,input:'10',output:'F(10) = 55'},
+    'recursion-14':{code:`#include <iostream>
+using namespace std;
+
+void hanoi(int n, char from, char to, char aux) {
+    if (n == 1) {
+        cout << from << " --> " << to << endl;
+        return;
+    }
+    hanoi(n-1, from, aux, to);
+    cout << from << " --> " << to << endl;
+    hanoi(n-1, aux, to, from);
+}
+
+int main() {
+    int n;
+    cin >> n;
+    hanoi(n, 'A', 'C', 'B');
+    return 0;
+}`,input:'3',output:'A-->C, A-->B, C-->B, A-->C, B-->A, B-->C, A-->C'},
+  },
+  java: {
+    'basics-1':{code:`public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello");
+        System.out.println("Ahmad");
+    }
+}`,input:'None',output:'Hello\\nAhmad'},
+    'loops-5':{code:`import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        long fact = 1;
+        for (int i = 1; i <= n; i++)
+            fact *= i;
+        System.out.println(n + "! = " + fact);
+    }
+}`,input:'5',output:'5! = 120'},
+    'functions-6':{code:`public class Main {
+    static long factorial(int n) {
+        if (n <= 1) return 1;
+        return n * factorial(n - 1);
+    }
+    
+    public static void main(String[] args) {
+        System.out.println("6! = " + factorial(6));
+    }
+}`,input:'6',output:'6! = 720'},
+    'recursion-1':{code:`public class Main {
+    static long factorial(int n) {
+        if (n == 0 || n == 1) return 1;
+        return n * factorial(n - 1);
+    }
+    
+    public static void main(String[] args) {
+        int n = 5;
+        System.out.println(n + "! = " + factorial(n));
+    }
+}`,input:'5',output:'5! = 120'},
+    'recursion-7':{code:`public class Main {
+    static int fib(int n) {
+        if (n <= 1) return n;
+        return fib(n - 1) + fib(n - 2);
+    }
+    
+    public static void main(String[] args) {
+        System.out.println("F(10) = " + fib(10));
+    }
+}`,input:'10',output:'F(10) = 55'},
+  },
+  c: {
+    'basics-1':{code:`#include <stdio.h>
+
+int main() {
+    printf("Hello\\n");
+    printf("Ahmad\\n");
+    return 0;
+}`,input:'None',output:'Hello\\nAhmad'},
+    'loops-5':{code:`#include <stdio.h>
+
+int main() {
+    int n;
+    scanf("%d", &n);
+    long long fact = 1;
+    for (int i = 1; i <= n; i++)
+        fact *= i;
+    printf("%d! = %lld\\n", n, fact);
+    return 0;
+}`,input:'5',output:'5! = 120'},
+    'pointers-2':{code:`#include <stdio.h>
+
+void swap(int* a, int* b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int main() {
+    int x = 5, y = 10;
+    swap(&x, &y);
+    printf("x=%d y=%d\\n", x, y);
+    return 0;
+}`,input:'x=5, y=10',output:'x=10 y=5'},
+    'recursion-1':{code:`#include <stdio.h>
+
+long long factorial(int n) {
+    if (n == 0 || n == 1) return 1;
+    return n * factorial(n - 1);
+}
+
+int main() {
+    int n;
+    scanf("%d", &n);
+    printf("%d! = %lld\\n", n, factorial(n));
+    return 0;
+}`,input:'5',output:'5! = 120'},
+  }
+};
+
+function getAnswer(lang, chId, qnum){
+  const key = `${chId}-${qnum}`;
+  return ANSWERS[lang]?.[key] || null;
+}
+
+// ══════════════════════════════════════════
+//  CHAPTERS GRID
+// ══════════════════════════════════════════
+function buildChapterGrid(filter='all'){
+  const grid = document.getElementById('chGrid');
+  const items = filter==='all' ? CHAPTERS : CHAPTERS.filter(c=>c.group===filter);
+  grid.innerHTML = items.map((ch,i)=>`
+    <div class="chapter-card reveal" style="transition-delay:${i*.04}s" onclick="scrollToChapter('${ch.id}')">
+      <div class="ch-num-badge">${String(i+1).padStart(2,'0')}</div>
+      <div class="ch-info">
+        <div class="ch-title">${ch.name}</div>
+        <div class="ch-count-tag">${ch.count} questions</div>
+        <div class="ch-bar"><div class="ch-bar-fill"></div></div>
+      </div>
+    </div>
+  `).join('');
+  // trigger reveal
+  setTimeout(()=>{
+    grid.querySelectorAll('.reveal').forEach(el=>{
+      el.classList.add('visible');
+    });
+  },50);
+}
+buildChapterGrid();
+
+function filterChapters(f){
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(f) || (f==='all'&&b.textContent==='All Topics'));
+  });
+  buildChapterGrid(f);
+}
+
+function scrollToChapter(id){
+  document.getElementById('questions').scrollIntoView({behavior:'smooth'});
+  setTimeout(()=>{
+    const btn = document.querySelector(`[data-ch="${id}"]`);
+    if(btn) btn.click();
+  },600);
+}
+
+// ══════════════════════════════════════════
+//  QUESTION PANEL
+// ══════════════════════════════════════════
+let currentLang = 'cpp';
+let currentChapter = CHAPTERS[0].id;
+
+function setLang(lang){
+  currentLang = lang;
+  ['cpp','java','c'].forEach(l=>{
+    document.getElementById(`lang-${l}`).classList.toggle('active',l===lang);
+  });
+  buildQPanel();
+}
+
+function buildQNav(){
+  const nav = document.getElementById('q-nav');
+  nav.innerHTML = CHAPTERS.map((ch,i)=>`
+    <button class="q-sec-btn${ch.id===currentChapter?' active':''}" data-ch="${ch.id}" onclick="selectChapter('${ch.id}')">
+      <span style="color:var(--cyan);font-size:9px">${String(i+1).padStart(2,'0')}</span>
+      ${ch.name.split(' ')[0]}
+      <span class="sec-cnt">${ch.count}</span>
+    </button>
+  `).join('');
+}
+
+function selectChapter(id){
+  currentChapter = id;
+  buildQNav();
+  buildQPanel();
+  document.getElementById('q-panel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function buildQPanel(){
+  const panel = document.getElementById('q-panel');
+  const ch = CHAPTERS.find(c=>c.id===currentChapter);
+  if(!ch) return;
+
+  const langLabel = {cpp:'C++',java:'Java',c:'C'}[currentLang];
+
+  panel.innerHTML = `
+    <div class="q-section-header">
+      <span class="sec-num">${String(CHAPTERS.indexOf(ch)+1).padStart(2,'0')}</span>
+      <span class="sec-name">${ch.name}</span>
+      <span class="sec-total">${ch.count} questions · ${langLabel}</span>
+    </div>
+    ${ch.q.map(q=>{
+      const [num, text, sample] = Array.isArray(q) ? q : [q[0],q[1],q[2]];
+      const ans = getAnswer(currentLang, ch.id, num);
+      const hasIO = sample || ans;
+      return `
+        <div class="q-card" id="q-${ch.id}-${num}">
+          <div class="q-head" onclick="toggleQ('${ch.id}',${num})">
+            <div class="q-badge">${String(num).padStart(2,'0')}</div>
+            <div style="flex:1">
+              <div class="q-text">${text}</div>
+              ${sample ? `
+                <div class="q-io">
+                  ${sample.in ? `<span class="io-pill in">▸ ${sample.in}</span>` : ''}
+                  ${sample.out ? `<span class="io-pill out">◂ ${sample.out}</span>` : ''}
+                </div>` : ''}
+            </div>
+            <div class="q-toggle">▾</div>
+          </div>
+          <div class="q-answer">
+            <div class="answer-wrap">
+              ${buildAnswer(ans, currentLang, sample)}
+            </div>
+          </div>
+        </div>`;
+    }).join('')}
+  `;
+}
+
+function buildAnswer(ans, lang, sample){
+  if(!ans && !sample){
+    const langLabel = {cpp:'C++',java:'Java',c:'C'}[lang];
+    return `<div style="padding:20px 18px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);text-align:center;padding:24px 0">
+        // Solution available in the PDF version<br>
+        <span style="color:var(--cyan);margin-top:8px;display:block">
+          Try solving it yourself first! 🚀
+        </span>
+      </div>
+    </div>`;
+  }
+
+  const inp = (ans&&ans.input) || (sample&&sample.in) || null;
+  const out = (ans&&ans.output) || (sample&&sample.out) || null;
+  const code = ans ? ans.code : null;
+  const displayIn = inp && inp!=='None' ? inp.replace(/\\n/g,' | ') : null;
+  const displayOut = out && out!=='None' ? out.replace(/\\n/g,' | ') : null;
+
+  let html = '';
+  if(displayIn || displayOut){
+    html += `<div class="ans-io">
+      <div class="io-box">
+        <div class="io-label in-lbl">Input</div>
+        <div class="io-val">${displayIn || '—'}</div>
+      </div>
+      <div class="io-box">
+        <div class="io-label out-lbl">Output</div>
+        <div class="io-val">${displayOut || '—'}</div>
+      </div>
+    </div>`;
+  }
+
+  if(code){
+    const highlighted = highlightCode(code, lang);
+    html += `<div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        </div>
+        <span class="code-file">solution.${lang==='java'?'java':lang+'.'+lang}</span>
+        <button class="copy-btn" onclick="copyCode(this,\`${escapeForAttr(code)}\`)">COPY</button>
+      </div>
+      <pre class="code">${highlighted}</pre>
+    </div>`;
+  }
+
+  return html;
+}
+
+function escapeForAttr(s){
+  return s.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+}
+
+function copyCode(btn, code){
+  navigator.clipboard.writeText(code.replace(/\\n/g,'\n').replace(/\\t/g,'\t'));
+  btn.textContent = '✓ COPIED';
+  btn.classList.add('copied');
+  setTimeout(()=>{btn.textContent='COPY';btn.classList.remove('copied')},2000);
+}
+
+function toggleQ(chId, num){
+  const card = document.getElementById(`q-${chId}-${num}`);
+  const wasOpen = card.classList.contains('open');
+  // close all in panel
+  document.querySelectorAll('.q-card.open').forEach(c=>c.classList.remove('open'));
+  if(!wasOpen){
+    card.classList.add('open');
+    // smooth scroll into view
+    setTimeout(()=>card.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+  }
+}
+
+// ══════════════════════════════════════════
+//  SYNTAX HIGHLIGHTER
+// ══════════════════════════════════════════
+function highlightCode(code, lang){
+  const lines = code.split('\n');
+  return lines.map(line=>{
+    const esc = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    let h = esc;
+
+    if(lang==='java'){
+      h=h.replace(/\b(public|private|protected|class|static|void|int|long|String|boolean|double|float|char|new|return|if|else|for|while|do|null|true|false|this|super|import|package|interface|abstract|extends|implements)\b/g,'<span class="kw">$1</span>');
+      h=h.replace(/"([^"]*)"/g,'<span class="str">"$1"</span>');
+      h=h.replace(/\b(\d+)\b/g,'<span class="num">$1</span>');
+      h=h.replace(/(\/\/.*)/g,'<span class="cmt">$1</span>');
+      h=h.replace(/\b(System|Scanner|Math|Arrays|ArrayList|HashMap)\b/g,'<span class="typ">$1</span>');
+    } else {
+      h=h.replace(/^(#\s*\w+.*)/,'<span class="inc">$1</span>');
+      h=h.replace(/\b(int|float|double|char|bool|void|string|long|short|unsigned|signed|auto|const|static|return|if|else|for|while|do|switch|case|break|continue|class|struct|public|private|protected|new|delete|true|false|nullptr|using|namespace|sizeof|include|scanf|printf)\b/g,'<span class="kw">$1</span>');
+      h=h.replace(/"([^"]*)"/g,'<span class="str">"$1"</span>');
+      h=h.replace(/\b(\d+)\b/g,'<span class="num">$1</span>');
+      h=h.replace(/(\/\/.*)/g,'<span class="cmt">$1</span>');
+      h=h.replace(/\b(cout|cin|endl|std)\b/g,'<span class="ns">$1</span>');
+      h=h.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g,'<span class="fn">$1</span>');
+    }
+
+    return `<span class="code-line">${h}</span>`;
+  }).join('\n');
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+buildQNav();
+buildQPanel();
+
+// ══════════════════════════════════════════
+//  TYPING EFFECT
+// ══════════════════════════════════════════
+const phrases = [
+  '> Initializing CodeMaster...',
+  '> Loading C++ modules... ✓',
+  '> Loading Java modules... ✓',
+  '> Loading C modules... ✓',
+  '> 650+ questions ready.',
+  '> Enter the code grid.',
+];
+let pIdx=0, cIdx=0;
+const typeEl = document.getElementById('type-out');
+function typeNext(){
+  if(pIdx>=phrases.length){pIdx=0;cIdx=0;typeEl.textContent='';setTimeout(typeNext,1500);return}
+  const phrase = phrases[pIdx];
+  if(cIdx<=phrase.length){
+    typeEl.textContent=phrase.slice(0,cIdx);
+    cIdx++;
+    setTimeout(typeNext,cIdx===phrase.length+1?900:40);
+  } else {
+    pIdx++;cIdx=0;
+    typeEl.textContent='';
+    setTimeout(typeNext,400);
+  }
+}
+setTimeout(typeNext,1000);
+
+// ══════════════════════════════════════════
+//  COUNTER ANIMATION
+// ══════════════════════════════════════════
+function animateCounter(el){
+  const target=+el.dataset.count;
+  let start=0;
+  const dur=1500,step=16;
+  const inc=target/(dur/step);
+  const t=setInterval(()=>{
+    start+=inc;
+    if(start>=target){start=target;clearInterval(t)}
+    el.textContent=Math.floor(start)+(target===100?'%':'+');
+  },step);
+}
+
+// ══════════════════════════════════════════
+//  SCROLL REVEAL + COUNTER
+// ══════════════════════════════════════════
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+      const counter=e.target.querySelector('[data-count]')||e.target;
+      if(counter.dataset.count) animateCounter(counter);
+      observer.unobserve(e.target);
+    }
+  });
+},{threshold:.15});
+
+document.querySelectorAll('.reveal,.stat-item').forEach(el=>observer.observe(el));
+
+// ══════════════════════════════════════════
+//  STATS BAR — also observe stat nums
+// ══════════════════════════════════════════
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const io=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting){animateCounter(el);io.disconnect()}
+  },{threshold:.5});
+  io.observe(el);
+});
+</script>
+</body>
+</html>
